@@ -122,7 +122,7 @@ ros2 service call /move_to_pose2 std_srvs/srv/Trigger
 ```
 
 ## 4.API使用简述
-本节点的核心功能是通过**` moveit::planning_interface::MoveGroupInterface`** 类来实现的。主要遵循了”设置目标 -> 规划 -> 执行“的流程：
+本节点的核心功能是通过 **` moveit::planning_interface::MoveGroupInterface`** 类来实现的。主要遵循了”设置目标 -> 规划 -> 执行“的流程：
 
 1. **`setJointValueTarget()`**：在收到服务请求后，将该请求对应的硬编码关节角度数组（一个 **`std::vector<double>`**） 传递给此函数，用于告知 **`Moveit`** 我们的运动目标。
 
