@@ -32,7 +32,7 @@ mv ros2_motion_challenge motion_challenge_ws
 ```
 
 ### 第二步：启动Docker容器
-在 motion_challenge_ws 的上级目录中，打开终端，执行以下命令来启动一个配置好ROS 2 Humble的容器，并将项目工作区挂载进去。
+在 **motion_challenge_ws** 的上级目录中，打开终端，执行以下命令来启动一个配置好ROS 2 Humble的容器，并将项目工作区挂载进去。
 
 ```bash
 # 允许图形界面连接
@@ -47,7 +47,7 @@ docker run -it \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   osrf/ros:humble-desktop
 ```
-执行后，您将进入容器的命令行环境（提示符为 root@...)
+***执行后，您将进入容器的命令行环境（提示符为 root@...）***
 
 ### 第三步：在容器内安装依赖并编译
 在容器终端中，执行一下命令来安装所有必要的依赖并编译工作区。
@@ -122,13 +122,13 @@ ros2 service call /move_to_pose2 std_srvs/srv/Trigger
 ```
 
 ## 4.API使用简述
-本节点的核心功能是通过 moveit::planning_interface::MoveGroupInterface 类来实现的。主要遵循了”设置目标 -> 规划 -> 执行“的流程：
+本节点的核心功能是通过**` moveit::planning_interface::MoveGroupInterface`** 类来实现的。主要遵循了”设置目标 -> 规划 -> 执行“的流程：
 
-1. setJointValueTarget()：在收到服务请求后，将该请求对应的硬编码关节角度数组（一个 std::vector<double>） 传递给此函数，用于告知 Moveit 我们的运动目标。
+1. **`setJointValueTarget()`**：在收到服务请求后，将该请求对应的硬编码关节角度数组（一个 **`std::vector<double>`**） 传递给此函数，用于告知 **`Moveit`** 我们的运动目标。
 
-2. plan()：调用 Moveit 的运动规划器，根据设定的目标计算出一条无碰撞的运动轨迹。此函数的返回值用于判断规划是否成功。
+2. **`plan()`**：调用 **`Moveit`** 的运动规划器，根据设定的目标计算出一条无碰撞的运动轨迹。此函数的返回值用于判断规划是否成功。
 
-3. execute()：在确认 plan() 成功后，调用此函数，并将规划结果作为参数传入。该函数会将轨迹发送给机器人控制器，驱动仿真机器人完成物理运动。
+3. **`execute()`**：在确认 **`plan()`** 成功后，调用此函数，并将规划结果作为参数传入。该函数会将轨迹发送给机器人控制器，驱动仿真机器人完成物理运动。
 
 ## 5.思考题解答
 
@@ -140,3 +140,225 @@ ros2 service call /move_to_pose2 std_srvs/srv/Trigger
 
 *笛卡尔空间规划：它的目标是让机械臂的末端执行器在三维空间中沿着一条预先指定的几何路径（例如一条直线，一段圆弧）运动。规划器会在这条路径上取一系列的路径点，然后通过逆运动学反复求解，计算出在每个路径点上所有关节应该处于的角度，最终形成一条能让末端走出指定路径的轨迹。*
 
+# Motion Challenge
+
+## 项目简介
+
+本仓库提供了一个已配置好的六轴机械臂仿真功能包,你们需要在此基础上编写C++节点来控制机械臂运动。
+
+## 系统要求
+
+- **操作系统**: Ubuntu 22.04
+- **ROS版本**: ROS 2 Humble
+- **依赖**: MoveIt 2
+
+## 安装依赖
+
+在开始之前,请确保已安装ROS 2 Humble和MoveIt 2:
+
+```bash
+# 安装ROS 2 Humble (如果尚未安装)
+# 参考: https://docs.ros.org/en/humble/Installation.html or rosfish
+# 缺啥包装啥
+
+# 安装MoveIt 2
+sudo apt update
+sudo apt install ros-humble-moveit
+sudo apt install ros-humble-moveit-resources
+sudo apt install ros-humble-moveit-visual-tools
+sudo apt install ros-humble-ros2-control
+sudo apt install ros-humble-ros2-controllers
+sudo apt install ros-humble-controller-manager
+```
+
+## 编译
+
+```bash
+cd ~/motion_challenge_ws
+colcon build --symlink-install
+source install/setup.bash
+```
+
+## 运行Demo
+
+启动机械臂仿真环境:
+
+```bash
+ros2 launch simple_robot_bringup demo.launch.py
+```
+
+启动后,你将看到:
+- **RViz**: 可视化界面,显示机械臂模型
+- **MoveIt MotionPlanning插件**: 可以通过拖动交互标记(Interactive Markers)手动规划路径
+- **move_group**: 后台运行的MoveIt运动规划服务
+
+### 测试手动运动规划
+
+1. 在RViz中,你会看到机械臂模型和橙色的交互机械臂
+2. 控制橙色机械臂到目标位置
+3. 点击"Plan"按钮生成运动轨迹
+4. 点击"Execute"按钮执行规划的轨迹
+
+## 项目结构
+
+```
+motion_challenge_ws/
+├── src/
+│   ├── simple_robot_description/      # 机械臂URDF模型描述
+│   │   ├── urdf/                      # URDF文件
+│   │   ├── meshes/                    # 3D网格文件
+│   │   ├── launch/                    # 启动文件
+│   │   └── rviz/                      # RViz配置
+│   │
+│   ├── simple_robot_moveit_config/    # MoveIt配置包
+│   │   ├── config/                    # MoveIt配置文件
+│   │   │   ├── simple_robot.srdf     # 语义描述文件
+│   │   │   ├── joint_limits.yaml     # 关节限制
+│   │   │   ├── kinematics.yaml       # 运动学求解器配置
+│   │   │   └── ...                    # 其他配置文件
+│   │   └── launch/                    # MoveIt启动文件
+│   │
+│   └── simple_robot_bringup/          # 系统启动包
+│       └── launch/
+│           └── demo.launch.py         # 主启动文件
+│
+└── README.md                          # 本文件
+```
+
+## 挑战任务
+
+### 任务描述
+
+编写一个C++的ROS 2节点,提供一个名为 `/move_to_position` 的服务。该服务:
+- 接收一个`string`类型的位置名称(如"home", "pose1", "pose2")
+- 根据预定义的关节角度,驱动机械臂运动到对应位置
+
+### 技术要求
+
+1. **语言**: C++
+2. **框架**: ROS 2 Humble + MoveIt 2
+3. **服务类型**: 自定义或使用std_srvs/srv/SetBool + Trigger组合
+4. **硬编码位置**: 在程序中预先定义至少3个关节位置
+
+### 机械臂信息
+
+- **自由度**: 6轴
+- **规划组名称**: `arm`
+- **关节名称**: `joint1`, `joint2`, `joint3`, `joint4`, `joint5`, `joint6`
+- **末端链接**: `link6`
+
+### 示例关节角度(参考)
+
+你可以在程序中定义类似以下的位置:
+
+```cpp
+// Home位置(全零位)
+home: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+// 示例位置1
+pose1: [0.5, -0.5, 1.0, 0.0, 1.5, 0.0]
+
+// 示例位置2  
+pose2: [-0.5, 0.5, -1.0, 0.0, -1.0, 0.5]
+```
+
+### 实现提示
+
+1. **创建新的功能包**:
+   ```bash
+   cd ~/motion_challenge_ws/src
+   ros2 pkg create --build-type ament_cmake arm_controller \
+     --dependencies rclcpp moveit_ros_planning_interface
+   ```
+
+2. **核心API使用**:
+   - 包含头文件: `#include <moveit/move_group_interface/move_group_interface.h>`
+   - 创建MoveGroupInterface对象
+   - 使用 `setJointValueTarget()` 设置目标关节角度
+   - 使用 `plan()` 和 `execute()` 进行规划和执行
+
+3. **服务定义**:
+   可以创建自定义服务,或使用简单的字符串话题进行测试
+
+### 测试你的节点
+
+```bash
+# 终端1: 启动demo环境
+ros2 launch simple_robot_bringup demo.launch.py
+
+# 终端2: 启动你的控制节点
+ros2 run arm_controller position_controller_node
+
+# 终端3: 测试服务调用
+ros2 service call /move_to_position <your_service_type> "{position: 'home'}"
+```
+
+## 思考题
+
+**问题**: 在你的实现中,机械臂是沿着直线运动到目标点的吗?如果不是,请解释为什么,并说明MoveIt中的"关节空间规划"和"笛卡尔空间规划"有何不同。
+
+**提示**: 观察机械臂末端执行器在运动过程中的轨迹路径,思考关节插值和笛卡尔空间插值的区别。
+
+## 调试技巧
+
+### 查看话题和服务
+
+```bash
+# 查看所有话题
+ros2 topic list
+
+# 查看所有服务  
+ros2 service list
+
+# 查看move_group服务
+ros2 service list | grep move_group
+```
+
+### 查看TF变换
+
+```bash
+# 查看坐标系关系
+ros2 run tf2_tools view_frames
+```
+
+### RViz不显示机械臂?
+
+检查以下配置:
+- Fixed Frame设置为 `base_link` 或 `world`
+- 添加RobotModel显示项
+- 添加MotionPlanning显示项
+
+## 参考资源
+
+- [MoveIt 2 Tutorials](https://moveit.picknik.ai/humble/index.html)
+- [MoveIt 2 C++ API文档](https://moveit.picknik.ai/humble/api/html/index.html)
+- [ROS 2 Humble文档](https://docs.ros.org/en/humble/index.html)
+
+## 常见问题
+
+### Q: 编译失败,提示找不到MoveIt?
+A: 确保已安装 `ros-humble-moveit` 和相关依赖包。
+
+### Q: 启动后RViz黑屏或没有显示?
+A: 检查是否正确source了工作区: `source install/setup.bash`
+
+### Q: 如何获取当前关节角度?
+A: 在RViz中查看,或使用命令: `ros2 topic echo /joint_states`
+
+## 交付要求
+
+1. **代码仓库**: 包含你编写的C++功能包
+2. **README.md**: 说明如何编译和运行你的节点
+3. **效果录屏**: 用于展示你的节点启动，机械臂控制等一系列操作
+4. **回答思考题**: 关于关节空间vs笛卡尔空间规划
+
+## 许可证
+
+Apache-2.0
+
+## 联系方式
+
+发给组长邮箱quixoticmaker@163.com，或者QQ和组长私信
+---
+
+**祝你编码愉快! 🚀🦾**
